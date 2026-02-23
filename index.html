@@ -113,7 +113,7 @@
                 <h2>🏢 Inventory Monitor</h2>
                 <div>
                     <button class="btn btn-sec" onclick="window.print()">🖨️ Print List</button>
-                    <button class="btn btn-pri" onclick="prepareTransaction('IN')">📥 Receive Stock</button>
+                    <button class="btn" onclick="openBatchModal('IN')">📦 Batch Receive</button>
                 </div>
             </div>
             <!-- Ilagay ito sa loob ng Inventory View container, sa taas ng table -->
@@ -129,7 +129,7 @@
     <input type="text" id="search-warehouse" class="inp" placeholder="🔍 Search Item..." onkeyup="renderWarehouse()" style="flex:1;">
 </div>
             <table>
-                <thead><tr><th>Category</th><th>Item</th><th>On Hand</th><th>Unit Value</th><th>Total Value</th><th>Status</th></tr></thead>
+                <thead><tr><th>Category</th><th>Item</th><th>On Hand</th><th>Unit Value</th><th>Total Value</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody id="tbl-warehouse"></tbody>
             </table>
         </div>
@@ -338,6 +338,38 @@
         </div>
     </div>
 </div>
+<!-- BATCH RECEIVE MODAL (Warehouse) -->
+<div id="modal-batch-in" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width: 600px;">
+        <h3>📦 Batch Receive Stocks</h3>
+        <div id="batch-in-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 10px;">
+            <!-- Dito lilitaw ang mga rows -->
+        </div>
+        <button class="btn btn-sec" onclick="addBatchRow('IN')" style="width:100%">+ Add Item Row</button>
+        <div class="modal-actions" style="margin-top: 15px;">
+            <button class="btn btn-red" onclick="closeModals()">Cancel</button>
+            <button class="btn" onclick="saveBatchTransaction('IN')">Save All</button>
+        </div>
+    </div>
+</div>
+
+<!-- BATCH DEPLOY MODAL (Project) -->
+<div id="modal-batch-out" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width: 600px;">
+        <h3>🏗️ Batch Deploy to Project</h3>
+        <p id="batch-project-name" style="color:var(--main); font-weight:bold;"></p>
+        <div id="batch-out-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 10px;">
+            <!-- Dito lilitaw ang mga rows -->
+        </div>
+        <button class="btn btn-sec" onclick="addBatchRow('OUT')" style="width:100%">+ Add Item Row</button>
+        <div class="modal-actions" style="margin-top: 15px;">
+            <button class="btn btn-red" onclick="closeModals()">Cancel</button>
+            <button class="btn" onclick="saveBatchTransaction('OUT')">Deploy All</button>
+        </div>
+    </div>
+</div>
+<!-- Dito ilalagay ng script ang mga items na may stock -->
+<datalist id="inventory-list"></datalist>
 <script src="script.js"></script>
 </body>
 </html>
