@@ -117,7 +117,7 @@ function switchView(viewName) {
                     <button class="btn btn-red" onclick="requireAuth('DELETE')">🗑️ Delete</button>
                     <!-- Old Buttons -->
                     <button class="btn btn-sec" onclick="printSpecificView('dashboard')">🖨️ Print</button>
-                    <button class="btn" onclick="prepareTransaction('OUT')">📤 Deploy</button>
+                    <button class="btn" onclick="openBatchModal('OUT')">📤 Batch Deploy</button>
                 </div>
             </div>
             
@@ -206,14 +206,21 @@ function switchView(viewName) {
             let onHand = inQty - outQty;
             let val = onHand * lastIn.price;
             
-            tbody.innerHTML += `<tr>
-                <td><span class="badge">${lastIn.category}</span></td>
-                <td>${item}</td>
-                <td>${onHand}</td>
-                <td>₱${lastIn.price.toLocaleString()}</td>
-                <td>₱${val.toLocaleString()}</td>
-                <td>${onHand<=5?'<span class="text-red">Low Stock</span>':'Good'}</td>
-            </tr>`;
+            // Hanapin ang part na ito sa loob ng renderWarehouse function:
+    tbody.innerHTML += `<tr>
+        <td><span class="badge">${lastIn.category}</span></td>
+        <td>${item}</td>
+        <td>${onHand}</td>
+        <td>₱${lastIn.price.toLocaleString()}</td>
+        <td>₱${val.toLocaleString()}</td>
+        <td>${onHand<=5?'<span class="text-red">Low Stock</span>':'Good'}</td>
+        
+        <!-- BAGONG ACTION BUTTONS -->
+        <td>
+            <button class="btn-sm" onclick="editItem('${item}')" title="Edit Name">✏️</button>
+            <button class="btn-sm btn-red" onclick="deleteItem('${item}')" title="Delete All Records">🗑️</button>
+        </td>
+    </tr>`;
         });
     }
         function updateReports() {
@@ -574,4 +581,183 @@ function renderOverview() {
         } else {
             alert("Please fill in all fields.");
         }
+    }
+        // --- BATCH TRANSACTION LOGIC ---
+
+    // 1. Buksan ang Modal at i-reset ang laman
+    function openBatchModal(type) {
+        // ... (ibang codes mo dito) ...
+
+        // ISINGIT ITO DITO:
+        updateInventorySuggestions(type); // <--- Refresh the list based on stock
+
+        let container = document.getElementById(type === 'IN' ? 'modal-batch-in' : 'modal-batch-out');
+        let rowContainer = document.getElementById(type === 'IN' ? 'batch-in-container' : 'batch-out-container');
+        
+        rowContainer.innerHTML = ''; // Clear previous data
+        addBatchRow(type); // Maglagay ng isang row agad
+        
+        if (type === 'OUT') {
+            if (!currentProjId) { alert("Select a project first!"); return; }
+            let p = projects.find(x => x.id === currentProjId);
+            document.getElementById('batch-project-name').innerText = "For: " + p.name;
+        }
+
+        container.style.display = 'flex';
+    }
+
+    // 2. Magdagdag ng Input Row sa HTML
+    function addBatchRow(type) {
+        let container = document.getElementById(type === 'IN' ? 'batch-in-container' : 'batch-out-container');
+        let div = document.createElement('div');
+        div.className = 'batch-row'; 
+        
+        let pricePlaceholder = type === 'IN' ? 'Cost per Unit' : 'Price per Unit';
+
+        // NOTE: Pansinin ang attribute na list="inventory-list" sa unang input
+        div.innerHTML = `
+            <input type="text" class="inp col-name" placeholder="Item Name" list="inventory-list" required autocomplete="off">
+            <input type="number" class="inp col-qty" placeholder="Qty" required>
+            <input type="number" class="inp col-price" placeholder="${pricePlaceholder}" required>
+            <button class="btn-x" onclick="this.parentElement.remove()" title="Remove">✖</button>
+        `;
+        
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+    // 3. I-save ang Lahat ng Rows
+    function saveBatchTransaction(type) {
+        let container = document.getElementById(type === 'IN' ? 'batch-in-container' : 'batch-out-container');
+        let rows = container.querySelectorAll('.batch-row');
+        let date = new Date().toISOString().split('T')[0];
+        let newTrans = [];
+        let isValid = true;
+
+        if (rows.length === 0) { alert("No items to save."); return; }
+
+        // Loop sa bawat row para kunin ang data
+        rows.forEach(row => {
+            let item = row.querySelector('.col-name').value.trim();
+            let qty = parseFloat(row.querySelector('.col-qty').value);
+            let price = parseFloat(row.querySelector('.col-price').value);
+
+            if (!item || !qty || !price) {
+                isValid = false;
+                row.style.border = "1px solid red"; // Highlight error
+            } else {
+                row.style.border = "none";
+                newTrans.push({
+                    id: Date.now() + Math.random(), // Unique ID
+                    date: date,
+                    type: type,
+                    item: item,
+                    qty: qty,
+                    price: price,
+                    category: type === 'IN' ? document.getElementById('filter-cat').value : 'Project', // Auto category
+                    refId: type === 'OUT' ? currentProjId : null
+                });
+            }
+        });
+
+        if (!isValid) {
+            alert("Please fill in all fields correctly.");
+            return;
+        }
+
+        // Add to main transactions array
+        transactions.push(...newTrans);
+        
+        // Save & Refresh
+        localStorage.setItem('ps6_trans', JSON.stringify(transactions));
+        closeModals();
+        renderOverview();
+        
+        if (type === 'IN') {
+            renderWarehouse();
+            alert(`Successfully Received ${newTrans.length} Items!`);
+        } else {
+            loadProjectDetails(currentProjId);
+            alert(`Successfully Deployed ${newTrans.length} Items!`);
+        }
+    }
+        // Update Suggestions List
+    function updateInventorySuggestions(type) {
+        let datalist = document.getElementById('inventory-list');
+        datalist.innerHTML = ''; // Linisin muna
+        
+        // 1. Kunin ang lahat ng Unique Items
+        let items = [...new Set(transactions.map(t => t.item))];
+        
+        items.forEach(item => {
+            // 2. Compute Stock Level
+            let all = transactions.filter(t => t.item === item);
+            let inQty = all.filter(t => t.type === 'IN').reduce((a,b)=>a+b.qty,0);
+            let outQty = all.filter(t => t.type === 'OUT').reduce((a,b)=>a+b.qty,0);
+            let stock = inQty - outQty;
+
+            // 3. Logic: 
+            // Kung "OUT" (Deploy) transaction, ipakita lang kung may Stock > 0.
+            // Kung "IN" (Receive), ipakita lahat (para madali mag-restock).
+            if (type === 'OUT' && stock <= 0) return; 
+
+            // 4. Gumawa ng Option sa listahan
+            let option = document.createElement('option');
+            option.value = item; 
+            
+            // Optional: Ipakita ang stock sa tabi ng pangalan (ex: "Cement - Stock: 50")
+            if (type === 'OUT') {
+                option.label = `Available: ${stock}`;
+            }
+            
+            datalist.appendChild(option);
+        });
+    }
+        // --- INVENTORY MANAGEMENT (Edit & Delete) ---
+
+    // 1. EDIT ITEM NAME
+    function editItem(oldName) {
+        // Humingi ng bagong pangalan
+        let newName = prompt(`Rename "${oldName}" to:`, oldName);
+        
+        // Validation: Kung walang tinype o same lang, cancel na.
+        if (!newName || newName === oldName) return;
+
+        // Update lahat ng transactions na may ganitong item name
+        let count = 0;
+        transactions.forEach(t => {
+            if (t.item === oldName) {
+                t.item = newName; // Palitan ang pangalan
+                count++;
+            }
+        });
+
+        // Save & Refresh
+        localStorage.setItem('ps6_trans', JSON.stringify(transactions));
+        renderOverview();
+        renderWarehouse();
+        alert(`Successfully updated ${count} records from "${oldName}" to "${newName}".`);
+    }
+
+    // 2. DELETE ITEM (Global Delete)
+    function deleteItem(itemToDelete) {
+        // Confirmation (Safety Check)
+        if (!confirm(`⚠️ WARNING: Are you sure you want to delete ALL records of "${itemToDelete}"?\n\nThis will remove it from Warehouse and Project History permanently.`)) {
+            return;
+        }
+
+        // Filter out (Alisin) lahat ng transactions na may pangalang ito
+        let initialLength = transactions.length;
+        transactions = transactions.filter(t => t.item !== itemToDelete);
+        
+        let deletedCount = initialLength - transactions.length;
+
+        // Save & Refresh
+        localStorage.setItem('ps6_trans', JSON.stringify(transactions));
+        renderOverview();
+        renderWarehouse();
+        
+        // Re-calculate Projects (Important para ma-update ang project costs)
+        if (typeof currentProjId !== 'undefined') loadProjectDetails(currentProjId);
+        
+        alert(`Deleted "${itemToDelete}" and its ${deletedCount} history records.`);
     }

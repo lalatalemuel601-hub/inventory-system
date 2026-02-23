@@ -311,3 +311,131 @@
             flex: 1; /* Pantay-pantay na laki ng buttons */
         }
     }
+        /* Style para sa Batch Rows */
+     /* 3. Ayusin ang Row para sakop ang buong lapad */
+    .batch-row {
+        position: relative;
+        counter-increment: row-num; /* Add +1 to counter */
+        display: flex;              /* Flexbox para magkatabi */
+        align-items: center;        /* Center vertically */
+        gap: 10px;                  /* Space sa pagitan ng inputs at button */
+        background: #fff;
+        padding: 10px 10px 10px 45px; /* Space sa kaliwa para sa number */
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        width: 100%;
+    }
+    /* 4. Ang Number sa Kaliwa (Counter) */
+     .batch-row::before {
+        content: counter(row-num);  /* Ipakita ang number */
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 35px;
+        background: #34495e;        /* Dark Blue background */
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        border-top-left-radius: 6px;
+        border-bottom-left-radius: 6px;
+     }
+    /* 5. Ang mga Inputs - Mag-stretch sila */
+    .batch-row input.col-name {
+        flex: 3;             /* Pinakamalapad ang Name (3 parts) */
+        min-width: 200px;
+    }
+
+    .batch-row .col-qty,
+    .batch-row .col-price {
+        flex: 1;                    /* 1 part ang lapad */
+        min-width: 80px;
+    }
+
+    /* 6. Delete Button */
+    .batch-row button.btn-x {
+        flex: 0;             /* Huwag mag-stretch */
+        min-width: 40px;
+        height: 40px;
+    }
+    
+    /* Mobile Adjustment */
+    @media (max-width: 768px) {
+        .batch-row {
+            padding-left: 50px; /* Maintain space for number */
+        }
+.batch-row .col-name {
+        flex: 3;                    /* 3 parts ang lapad */
+        min-width: 150px;
+    }
+    }
+        /* --- FULL SCREEN BATCH MODAL --- */
+
+    /* 1. Palakihin ang Modal Box para sa Batch In at Batch Out lang */
+    #modal-batch-in .modal-box,
+    #modal-batch-out .modal-box {
+        width: 95%;          /* Sakupin ang 95% ng lapad ng screen */
+        max-width: 1200px;   /* Maximum width para hindi sobrang haba sa malaking monitor */
+        height: 90vh;        /* Sakupin ang 90% ng taas ng screen */
+        display: flex;       
+        flex-direction: column;
+        padding: 20px;
+    }
+
+    /* 2. Siguraduhing ang container ng rows ang mag-i-scroll, hindi ang buong page */
+    #batch-in-container, 
+    #batch-out-container {
+        counter-reset: row-num;  /* Reset counter to 0 */
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+        overflow-y: auto;        /* Scrollable inside */
+        height: 100%;            /* Gamitin ang full height ng modal */
+    }
+.batch-row input {
+        height: 40px;               /* Fixed height */
+        margin: 0 !important
+    }
+        /* 5. X Button (Katabi lang ng Price) */
+    .batch-row .btn-x {
+        flex: 0 0 auto;             /* Huwag mag-stretch */
+        height: 40px;               /* Kapantay ng input */
+        width: 40px;
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .batch-row .btn-x:hover {
+        background: #c0392b;
+    }
+       @media (max-width: 768px) {
+        .batch-row {
+            flex-wrap: wrap;        /* Bumaba ang items kung siksikan */
+            padding-left: 50px;
+        }
+        .batch-row .col-name {
+            width: 100%;            /* Full width sa name */
+            flex: none;
+        }
+    }
+    .btn-sm {
+    padding: 2px 8px;
+    font-size: 1.2em;
+    cursor: pointer;
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-right: 5px;
+}
+.btn-sm:hover { background: #eee; }
+.btn-red { color: red; border-color: red; }
